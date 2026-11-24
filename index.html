@@ -480,6 +480,26 @@ textarea.text-field { height: 74px; padding: 9px 12px; resize: vertical; font-fa
 }
 .btn-danger { background: var(--danger-soft); color: var(--danger); border-color: transparent; }
 
+.links-list { display: flex; flex-direction: column; gap: 8px; }
+.link-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 10px 12px; border-radius: 12px;
+  background: var(--glass-strong); border: 1px solid var(--divider);
+}
+.link-info { min-width: 0; flex: 1; }
+.link-name { font-size: 13px; font-weight: 600; color: var(--text-main); }
+.link-url {
+  font-size: 11.5px; color: var(--text-muted); margin-top: 2px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+.link-actions { display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0; }
+.link-mini-btn {
+  height: 29px; padding: 0 10px; border-radius: 8px;
+  border: 1px solid var(--divider); background: var(--glass-bg);
+  color: var(--primary); font-size: 12px; font-weight: 600; cursor: pointer;
+}
+
 /* 底部紧凑悬浮导航栏 */
 .bottom-dock {
   position: fixed; left: 50%; transform: translateX(-50%);
@@ -655,7 +675,7 @@ textarea.text-field { height: 74px; padding: 9px 12px; resize: vertical; font-fa
     gap: 16px;
     align-items: start;
   }
-  .stats-overview-panel { grid-column: 1 / -1; }
+  .stats-overview-panel, .links-memo-panel { grid-column: 1 / -1; }
   .sync-panel-card { grid-column: 2; grid-row: 2 / span 2; }
 }
 
@@ -916,6 +936,12 @@ textarea.text-field { height: 74px; padding: 9px 12px; resize: vertical; font-fa
             <button id="importJsonBtn" type="button" class="btn-soft">导入 JSON 备份</button>
             <input id="importFileInput" type="file" accept=".json,application/json" class="hidden" />
           </div>
+        </div>
+
+        <div class="glass-card setting-panel links-memo-panel">
+          <h2 class="panel-title">相关网址备忘录</h2>
+          <p class="panel-desc">换新设备、查云端源数据或管理令牌时可直接复制或打开</p>
+          <div id="quickLinksList" class="links-list"></div>
         </div>
       </div>
     </section>
@@ -1690,6 +1716,32 @@ window.TimeTraceSync = (function () {
     $('lastSyncText').textContent = isBound
       ? ('已永久绑定本机 · ' + (cfg.lastSyncAt ? ('上次同步：' + S.formatFullTime(cfg.lastSyncAt)) : '改动后自动静默同步'))
       : '尚未绑定云同步（绑定一次即可永久自动同步）';
+    if ($('createVaultBtn')) {
+      $('createVaultBtn').textContent = cfg.gistId ? '已创建同步库（无需再点）' : '首台设备：一键创建同步库';
+    }
+
+    const linksEl = $('quickLinksList');
+    if (linksEl) {
+      const p = 'https:/';
+      const memoLinks = [
+        { name: '时光待办网页版（新设备打开 / 添加到主屏幕）', url: [p, 'bibubibu1106.github.io', 'timetrace', ''].join('/') },
+        { name: 'GitHub 界面代码仓库', url: [p, 'github.com', 'Bibubibu1106', 'timetrace'].join('/') },
+        { name: '码云 Gitee 私人令牌管理页', url: [p, 'gitee.com', 'profile', 'personal_access_tokens'].join('/') },
+        { name: '码云 Gitee 我的云端代码片段', url: [p, 'gitee.com', 'dashboard', 'codes'].join('/') }
+      ];
+      linksEl.innerHTML = memoLinks.map((lk) => `
+        <div class="link-row">
+          <div class="link-info">
+            <div class="link-name">${esc(lk.name)}</div>
+            <div class="link-url">${esc(lk.url)}</div>
+          </div>
+          <div class="link-actions">
+            <button type="button" class="link-mini-btn" data-copy-url="${esc(lk.url)}">复制</button>
+            <button type="button" class="link-mini-btn" data-open-url="${esc(lk.url)}">打开</button>
+          </div>
+        </div>
+      `).join('');
+    }
 
     const cats = activeCategories();
     $('manageCatsList').innerHTML = cats.map((c) => `
@@ -1931,6 +1983,25 @@ window.TimeTraceSync = (function () {
         return;
       }
 
+      const copyUrlBtn = e.target.closest('[data-copy-url]');
+      if (copyUrlBtn) {
+        const u = copyUrlBtn.dataset.copyUrl;
+        try { await navigator.clipboard.writeText(u); showToast('网址已复制'); }
+        catch (err) { showToast(u); }
+        return;
+      }
+
+      const openUrlBtn = e.target.closest('[data-open-url]');
+      if (openUrlBtn) {
+        const u = openUrlBtn.dataset.openUrl;
+        if (window.AndroidBridge && typeof window.AndroidBridge.openExternalUrl === 'function') {
+          window.AndroidBridge.openExternalUrl(u);
+        } else {
+          window.open(u, '_blank', 'noopener,noreferrer');
+        }
+        return;
+      }
+
       const swBtn = e.target.closest('[data-pick-swatch]');
       if (swBtn) {
         pickedCatColor = swBtn.dataset.pickSwatch;
@@ -2066,12 +2137,21 @@ window.TimeTraceSync = (function () {
     $('syncModeSelect').addEventListener('change', () => { saveSyncInputsQuietly(); renderSettings(); });
     $('createVaultBtn').addEventListener('click', async () => {
       try {
+        const existingGist = ($('gistIdInput').value || cfg.gistId || '').trim();
+        if (existingGist) {
+          const ok = window.confirm(
+            '当前已绑定云端同步库 ID（' + existingGist.slice(0, 8) + '...），无需重复创建！\n\n' +
+            '如果继续新建，会产生另一个全新的同步库，其他设备需要重新粘贴新配对码才能互通。\n确定仍要新建吗？'
+          );
+          if (!ok) return;
+        }
         saveSyncInputsQuietly();
         showToast('正在创建私有同步库...');
         const gistId = await Sync.createGiteeVault(cfg.giteeToken, store);
         cfg.gistId = gistId;
         cfg.lastSyncAt = Date.now();
         S.saveConfig(cfg);
+        $('pairCodeInput').value = Sync.encodePairCode(cfg);
         renderSettings();
         updateSyncBadge('ok', '已同步');
         showToast('创建成功！已自动生成同步库 ID');
