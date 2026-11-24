@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#2b1e54" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="时光待办" />
+  <title>时光待办 · TimeTrace</title>
+  <link rel="manifest" href="./manifest.json" />
+  <link rel="icon" type="image/svg+xml" href="./icon.svg" />
+  <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png" />
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <div id="toast" class="toast"></div>
+
+  <div class="app-shell">
+    <!-- iPad / Mac 电脑宽屏专属左侧磨砂侧边栏 -->
+    <aside class="glass-card desktop-sidebar" aria-label="侧边导航">
+      <div class="brand" style="padding:2px 6px">
+        <img src="./icon.svg" alt="时光待办" class="brand-logo" />
+        <div>
+          <div class="brand-title">时光待办</div>
+          <div id="sideBrandSub" class="brand-sub">记录开始与完成</div>
+        </div>
+      </div>
+
+      <div>
+        <div class="side-section-lbl">视图切换</div>
+        <div class="side-nav">
+          <button type="button" class="side-nav-btn active" data-tab="todo">
+            <span class="side-nav-left">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              待办清单
+            </span>
+          </button>
+          <button type="button" class="side-nav-btn" data-tab="timeline">
+            <span class="side-nav-left">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 14"/></svg>
+              时间轴归档
+            </span>
+          </button>
+          <button type="button" class="side-nav-btn" data-tab="settings">
+            <span class="side-nav-left">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              我的
+            </span>
+          </button>
+        </div>
+      </div>
+
+      <div>
+        <div class="side-section-lbl">清单分类</div>
+        <div id="sidebarCats" class="side-nav"></div>
+      </div>
+
+      <div class="side-footer">
+        <div class="side-actions-row">
+          <button id="sideSyncBtn" type="button" class="sync-pill" title="立即多端同步">
+            <span id="sideSyncDot" class="sync-dot"></span>
+            <span id="sideSyncLabel">本地模式</span>
+          </button>
+          <button id="sideThemeBtn" type="button" class="icon-btn" aria-label="切换深浅色模式">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+            </svg>
+          </button>
+        </div>
+        <div class="kbd-hint">快捷键：按 N 新建 · 按 / 搜索</div>
+      </div>
+    </aside>
+
+    <div class="workspace-col">
+    <!-- 手机端顶部标题与同步状态 -->
+    <header class="top-bar">
+      <div class="brand">
+        <img src="./icon.svg" alt="时光待办" class="brand-logo" />
+        <div>
+          <h1 class="brand-title">时光待办</h1>
+          <div id="brandSubtitle" class="brand-sub">记录每一件事的开始与完成</div>
+        </div>
+      </div>
+      <div class="top-actions">
+        <button id="syncBtn" type="button" class="sync-pill" title="立即多端同步">
+          <span id="syncDot" class="sync-dot"></span>
+          <span id="syncLabel">本地模式</span>
+        </button>
+        <button id="themeBtn" type="button" class="icon-btn" aria-label="切换深浅色模式">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- 视图 1：待办清单 -->
+    <main id="view-todo">
+      <form id="composerForm" class="glass-card composer">
+        <div class="composer-row">
+          <input id="newTaskInput" type="text" class="composer-input" placeholder="记下一件事（自动记录时间）..." autocomplete="off" />
+          <button type="submit" class="add-btn">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            添加
+          </button>
+        </div>
+        <div class="composer-meta">
+          <div id="composerCats" class="cat-pick-list"></div>
+          <div class="ddl-picker-wrap">
+            <label id="newDdlPill" class="ddl-pill" title="默认长期有效，点击可手动指定截止日期">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="4" width="18" height="18" rx="3"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              <span id="newDdlText">默认长期 · 设DDL</span>
+              <input id="newDueInput" type="date" class="ddl-native-input" />
+            </label>
+            <button id="clearNewDdlBtn" type="button" class="ddl-clear-btn hidden" aria-label="恢复长期">×</button>
+          </div>
+        </div>
+      </form>
+
+      <div class="filter-bar mobile-only-filter">
+        <div id="filterCats" class="chips-scroll"></div>
+      </div>
+
+      <div class="sub-toolbar">
+        <div class="seg-group">
+          <button type="button" class="seg-btn active" data-status="all">全部</button>
+          <button type="button" class="seg-btn" data-status="open">待办</button>
+          <button type="button" class="seg-btn" data-status="done">已完成</button>
+        </div>
+        <div class="search-box">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input id="searchInput" type="search" placeholder="搜索事项..." />
+        </div>
+      </div>
+
+      <div id="taskList" class="task-list"></div>
+    </main>
+
+    <!-- 视图 2：历史时间轴归档 -->
+    <section id="view-timeline" class="hidden">
+      <div id="calendarCard" class="glass-card cal-card">
+        <div class="cal-head">
+          <div class="cal-nav-group">
+            <button id="calPrevBtn" type="button" class="cal-arrow-btn" aria-label="上个月">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+            </button>
+            <div id="calMonthTitle" class="cal-title">2026年 11月</div>
+            <button id="calNextBtn" type="button" class="cal-arrow-btn" aria-label="下个月">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </button>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px">
+            <button id="calTodayBtn" type="button" class="btn-soft cal-mini-btn">今天</button>
+            <button id="clearDateBtn" type="button" class="btn-soft cal-mini-btn active">本月全部</button>
+          </div>
+        </div>
+
+        <div class="cal-weekdays">
+          <span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span><span>日</span>
+        </div>
+
+        <div id="calGrid" class="cal-grid"></div>
+
+        <div class="cal-legend">
+          <div class="cal-legend-dots">
+            <span><i class="cal-dot ddl"></i>有待办DDL</span>
+            <span><i class="cal-dot create"></i>有新建</span>
+            <span><i class="cal-dot finish"></i>有完成</span>
+          </div>
+          <span id="calHintText" class="cal-hint">左右滑动切月 · 点日期筛选</span>
+        </div>
+      </div>
+
+      <div id="timelineContainer"></div>
+    </section>
+
+    <!-- 视图 3：我的（数据统计 + 多端云同步 + 分类管理 + 本地备份） -->
+    <section id="view-settings" class="hidden">
+      <div class="settings-stack">
+        <div class="glass-card setting-panel stats-overview-panel">
+          <h2 class="panel-title">数据统计</h2>
+          <p class="panel-desc" id="myStatsSub">当前待办 0 项 · 累计已完成 0 项</p>
+          <div class="stats-grid" style="margin-bottom:0">
+            <div class="stat-inner-box">
+              <div id="statMonthCreate" class="stat-val">0</div>
+              <div class="stat-lbl">本月记下</div>
+            </div>
+            <div class="stat-inner-box">
+              <div id="statMonthDone" class="stat-val">0</div>
+              <div class="stat-lbl">本月完成</div>
+            </div>
+            <div class="stat-inner-box">
+              <div id="statTotalAll" class="stat-val">0</div>
+              <div class="stat-lbl">总事项数量</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="glass-card setting-panel">
+          <h2 class="panel-title">分类标签管理</h2>
+          <p class="panel-desc">点下方色点自由选色（点已有标签也可切换圆点颜色），多端自动同步</p>
+          <div id="manageCatsList" style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:11px"></div>
+          <div id="catColorSwatches" class="swatch-row"></div>
+          <div style="display:flex;gap:8px">
+            <input id="newCatInput" type="text" class="text-field" placeholder="输入新分类名称（如：影视、读书、健身）" style="flex:1" />
+            <button id="addCatBtn" type="button" class="btn-soft btn-primary" style="height:38px;flex-shrink:0">新增分类</button>
+          </div>
+        </div>
+
+        <div class="glass-card setting-panel sync-panel-card">
+          <h2 class="panel-title">多端云同步</h2>
+          <p class="panel-desc" id="lastSyncText">尚未绑定云同步（绑定一次即可永久自动同步）</p>
+
+          <div class="field-group">
+            <label class="field-label">同步引擎选择</label>
+            <select id="syncModeSelect" class="text-field">
+              <option value="gitee">免服务器国内直连（码云 Gitee 私有云片段 · 免费推荐）</option>
+              <option value="server">自建私有云服务器 / 电脑局域网服务</option>
+            </select>
+          </div>
+
+          <div id="giteeBox">
+            <div class="field-group">
+              <label class="field-label">1. Gitee 私人令牌 (登录 gitee.com → 设置 → 私人令牌 → 仅勾选 gists)</label>
+              <input id="giteeTokenInput" type="password" class="text-field" placeholder="粘贴你的 Gitee Access Token" />
+            </div>
+            <div class="field-group">
+              <label class="field-label">2. 云端同步库 ID（首台设备点下方「一键创建」自动生成）</label>
+              <input id="gistIdInput" type="text" class="text-field" placeholder="自动生成或填入已有 Gist ID" />
+            </div>
+            <div class="btn-row">
+              <button id="createVaultBtn" type="button" class="btn-soft">首台设备：一键创建同步库</button>
+              <button id="saveAndSyncBtn" type="button" class="btn-soft btn-primary">保存并立即同步</button>
+            </div>
+          </div>
+
+          <div id="serverBox" class="hidden">
+            <div class="field-group">
+              <label class="field-label">私有服务器地址（如 http://192.168.1.8:8765 或云服务器域名）</label>
+              <input id="serverUrlInput" type="url" class="text-field" placeholder="http://你的IP或域名:8765" />
+            </div>
+            <div class="field-group">
+              <label class="field-label">同步访问密钥（可选，对应服务端 --token 参数）</label>
+              <input id="serverTokenInput" type="password" class="text-field" placeholder="未设置可留空" />
+            </div>
+            <div class="btn-row">
+              <button id="serverSyncBtn" type="button" class="btn-soft btn-primary">保存并立即同步</button>
+            </div>
+          </div>
+
+          <div style="border-top:1px solid var(--divider);margin-top:14px;padding-top:12px">
+            <label class="field-label">跨设备极速配对码（任一设备生成配对码，其他设备直接粘贴即可互通）</label>
+            <input id="pairCodeInput" type="text" class="text-field" placeholder="TT1- 开头的云同步配对码" />
+            <div class="btn-row">
+              <button id="copyPairBtn" type="button" class="btn-soft">生成并复制本机配对码</button>
+              <button id="applyPairBtn" type="button" class="btn-soft">粘贴配对码一键绑定</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="glass-card setting-panel">
+          <h2 class="panel-title">本地数据备份与导出</h2>
+          <p class="panel-desc">支持完整 JSON 增量合并恢复，或导出 Excel 可读的 CSV 时间表</p>
+          <div class="btn-row">
+            <button id="exportJsonBtn" type="button" class="btn-soft">导出 JSON 备份</button>
+            <button id="exportCsvBtn" type="button" class="btn-soft">导出 CSV 表格</button>
+            <button id="importJsonBtn" type="button" class="btn-soft">导入 JSON 备份</button>
+            <input id="importFileInput" type="file" accept=".json,application/json" class="hidden" />
+          </div>
+        </div>
+
+        <div class="glass-card setting-panel links-memo-panel">
+          <h2 class="panel-title">相关网址备忘录</h2>
+          <p class="panel-desc">换新设备、查云端源数据或管理令牌时可直接复制或打开</p>
+          <div id="quickLinksList" class="links-list"></div>
+        </div>
+      </div>
+    </section>
+    </div>
+  </div>
+
+  <!-- 底部紧凑悬浮栏 -->
+  <nav class="bottom-dock" aria-label="主导航">
+    <button type="button" class="dock-tab active" data-tab="todo">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+      待办清单
+    </button>
+    <button type="button" class="dock-tab" data-tab="timeline">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 14"/></svg>
+      时间轴
+    </button>
+    <button type="button" class="dock-tab" data-tab="settings">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      我的
+    </button>
+  </nav>
+
+  <!-- 事项详情与时间微调弹窗 -->
+  <div id="taskModal" class="modal-mask">
+    <div class="modal-card">
+      <div class="modal-head">
+        <h3 class="modal-title">事项详情与时间记录</h3>
+        <button id="closeModalBtn" type="button" class="close-fixed-btn" aria-label="关闭">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div id="detailFullTime" class="detail-time-box"></div>
+      <div class="field-group">
+        <label class="field-label">事项名称</label>
+        <input id="editTitle" type="text" class="text-field" />
+      </div>
+      <div class="field-group">
+        <label class="field-label">备注说明</label>
+        <textarea id="editNote" class="text-field" placeholder="补充细节、链接或心得..."></textarea>
+      </div>
+      <div class="modal-form-rows">
+        <div class="modal-form-row">
+          <label class="modal-row-lbl" for="editCat">所属分类</label>
+          <div class="modal-row-ctrl">
+            <select id="editCat" class="text-field"></select>
+          </div>
+        </div>
+        <div class="modal-form-row">
+          <label class="modal-row-lbl" for="editDueDate">截止日期</label>
+          <div class="modal-row-ctrl">
+            <div id="dueFieldWrap" class="picker-wrap">
+              <input id="editDueDate" type="date" class="text-field" />
+              <span class="picker-placeholder">长期有效（点击设 DDL）</span>
+            </div>
+            <button id="clearEditDueBtn" type="button" class="row-mini-btn hidden">设为长期</button>
+          </div>
+        </div>
+        <div class="modal-form-row">
+          <label class="modal-row-lbl" for="editCreatedAt">创建时间</label>
+          <div class="modal-row-ctrl">
+            <input id="editCreatedAt" type="datetime-local" class="text-field" />
+          </div>
+        </div>
+        <div class="modal-form-row">
+          <label class="modal-row-lbl" for="editCompletedAt">完成时间</label>
+          <div class="modal-row-ctrl">
+            <div id="doneFieldWrap" class="picker-wrap">
+              <input id="editCompletedAt" type="datetime-local" class="text-field" />
+              <span class="picker-placeholder">未完成（点击可补录）</span>
+            </div>
+            <button id="clearEditDoneBtn" type="button" class="row-mini-btn hidden">设为未完</button>
+          </div>
+        </div>
+      </div>
+      <div class="btn-row" style="justify-content:space-between;margin-top:14px">
+        <button id="deleteTaskBtn" type="button" class="btn-soft btn-danger">删除事项</button>
+        <button id="saveTaskBtn" type="button" class="btn-soft btn-primary">保存修改</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="./store.js"></script>
+  <script src="./sync.js"></script>
+  <script src="./app.js"></script>
+  <script>
+    if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+      navigator.serviceWorker.register('./sw.js').catch(function(){});
+    }
+  </script>
+</body>
+</html>
