@@ -1,0 +1,25 @@
+{
+  "name": "时光待办 · TimeTrace",
+  "short_name": "时光待办",
+  "description": "精确记录每一件事的创建时间、完成时间与历时统计，支持多端无冲突云同步",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#3C2663",
+  "theme_color": "#3C2663",
+  "icons": [
+    {
+      "src": "./icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
