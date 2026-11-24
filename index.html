@@ -515,6 +515,45 @@ textarea.text-field { height: 74px; padding: 9px 12px; resize: vertical; font-fa
   display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px;
 }
 .modal-title { font-size: 16px; font-weight: 650; margin: 0; }
+.detail-time-box {
+  font-size: 12.5px; color: var(--primary); background: var(--primary-soft);
+  padding: 9px 12px; border-radius: 11px; margin-bottom: 13px;
+  display: flex; flex-direction: column; gap: 4px; line-height: 1.45;
+  font-variant-numeric: tabular-nums;
+}
+.detail-line { display: flex; align-items: baseline; gap: 8px; }
+.detail-k { font-weight: 650; opacity: 0.85; flex-shrink: 0; }
+.detail-v { font-weight: 550; word-break: break-word; }
+
+.modal-form-rows {
+  display: flex; flex-direction: column; gap: 10px;
+  margin-top: 2px; padding-top: 12px; border-top: 1px solid var(--divider);
+}
+.modal-form-row {
+  display: flex; align-items: center; gap: 10px;
+}
+.modal-row-lbl {
+  width: 62px; flex-shrink: 0;
+  font-size: 13px; font-weight: 600; color: var(--text-sub);
+}
+.modal-row-ctrl {
+  flex: 1; min-width: 0; display: flex; align-items: center; gap: 6px;
+}
+.picker-wrap { position: relative; flex: 1; min-width: 0; }
+.picker-wrap.is-empty input { color: transparent; }
+.picker-wrap.is-empty input::-webkit-datetime-edit { color: transparent; }
+.picker-placeholder {
+  display: none; position: absolute; left: 12px; right: 30px; top: 50%;
+  transform: translateY(-50%); font-size: 13px; color: var(--text-muted);
+  pointer-events: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.picker-wrap.is-empty .picker-placeholder { display: block; }
+.row-mini-btn {
+  height: 38px; padding: 0 10px; border-radius: 10px;
+  border: 1px solid var(--divider); background: var(--primary-soft);
+  color: var(--primary); font-size: 12px; font-weight: 600;
+  cursor: pointer; white-space: nowrap; flex-shrink: 0;
+}
 .close-fixed-btn {
   width: 32px; height: 32px; min-width: 32px; min-height: 32px;
   border-radius: 10px; border: 1px solid var(--divider); background: var(--glass-bg);
@@ -907,7 +946,7 @@ textarea.text-field { height: 74px; padding: 9px 12px; resize: vertical; font-fa
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
       </div>
-      <div id="detailFullTime" style="font-size:12px;color:var(--primary);background:var(--primary-soft);padding:8px 10px;border-radius:9px;margin-bottom:12px;line-height:1.45"></div>
+      <div id="detailFullTime" class="detail-time-box"></div>
       <div class="field-group">
         <label class="field-label">事项名称</label>
         <input id="editTitle" type="text" class="text-field" />
@@ -916,27 +955,38 @@ textarea.text-field { height: 74px; padding: 9px 12px; resize: vertical; font-fa
         <label class="field-label">备注说明</label>
         <textarea id="editNote" class="text-field" placeholder="补充细节、链接或心得..."></textarea>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-        <div class="field-group">
-          <label class="field-label">所属分类</label>
-          <select id="editCat" class="text-field"></select>
+      <div class="modal-form-rows">
+        <div class="modal-form-row">
+          <label class="modal-row-lbl" for="editCat">所属分类</label>
+          <div class="modal-row-ctrl">
+            <select id="editCat" class="text-field"></select>
+          </div>
         </div>
-        <div class="field-group">
-          <label class="field-label" style="display:flex;justify-content:space-between;align-items:center">
-            <span>截止日期 DDL</span>
-            <button id="clearEditDueBtn" type="button" style="border:none;background:none;color:var(--primary);font-size:11.5px;cursor:pointer;padding:0;font-weight:600">设为长期</button>
-          </label>
-          <input id="editDueDate" type="date" class="text-field" />
+        <div class="modal-form-row">
+          <label class="modal-row-lbl" for="editDueDate">截止日期</label>
+          <div class="modal-row-ctrl">
+            <div id="dueFieldWrap" class="picker-wrap">
+              <input id="editDueDate" type="date" class="text-field" />
+              <span class="picker-placeholder">长期有效（点击设 DDL）</span>
+            </div>
+            <button id="clearEditDueBtn" type="button" class="row-mini-btn hidden">设为长期</button>
+          </div>
         </div>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-        <div class="field-group">
-          <label class="field-label">创建时间（可微调补录）</label>
-          <input id="editCreatedAt" type="datetime-local" class="text-field" />
+        <div class="modal-form-row">
+          <label class="modal-row-lbl" for="editCreatedAt">创建时间</label>
+          <div class="modal-row-ctrl">
+            <input id="editCreatedAt" type="datetime-local" class="text-field" />
+          </div>
         </div>
-        <div class="field-group">
-          <label class="field-label">完成时间（留空为未完成）</label>
-          <input id="editCompletedAt" type="datetime-local" class="text-field" />
+        <div class="modal-form-row">
+          <label class="modal-row-lbl" for="editCompletedAt">完成时间</label>
+          <div class="modal-row-ctrl">
+            <div id="doneFieldWrap" class="picker-wrap">
+              <input id="editCompletedAt" type="datetime-local" class="text-field" />
+              <span class="picker-placeholder">未完成（点击可补录）</span>
+            </div>
+            <button id="clearEditDoneBtn" type="button" class="row-mini-btn hidden">设为未完</button>
+          </div>
         </div>
       </div>
       <div class="btn-row" style="justify-content:space-between;margin-top:14px">
@@ -1712,6 +1762,15 @@ window.TimeTraceSync = (function () {
     renderAll();
   }
 
+  function syncModalPickerState() {
+    const hasDue = !!$('editDueDate').value;
+    const hasDone = !!$('editCompletedAt').value;
+    $('dueFieldWrap').classList.toggle('is-empty', !hasDue);
+    $('clearEditDueBtn').classList.toggle('hidden', !hasDue);
+    $('doneFieldWrap').classList.toggle('is-empty', !hasDone);
+    $('clearEditDoneBtn').classList.toggle('hidden', !hasDone);
+  }
+
   function openTaskModal(taskId) {
     const t = activeTasks().find((x) => x.id === taskId);
     if (!t) return;
@@ -1724,9 +1783,14 @@ window.TimeTraceSync = (function () {
     $('editDueDate').value = t.dueDate || '';
     $('editCreatedAt').value = S.toDatetimeLocal(t.createdAt);
     $('editCompletedAt').value = t.completedAt ? S.toDatetimeLocal(t.completedAt) : '';
-    $('detailFullTime').textContent = '创建精确记录：' + S.formatFullTime(t.createdAt) +
-      ' ｜ 期限：' + (t.dueDate ? ('DDL ' + t.dueDate) : '长期有效') +
-      (t.completedAt ? (' ｜ 完成：' + S.formatFullTime(t.completedAt) + '（时隔 ' + S.formatDuration(t.createdAt, t.completedAt) + '）') : '');
+    syncModalPickerState();
+
+    let lines = `<div class="detail-line"><span class="detail-k">创建记录</span><span class="detail-v">${esc(S.formatFullTime(t.createdAt))}</span></div>`;
+    lines += `<div class="detail-line"><span class="detail-k">截止期限</span><span class="detail-v">${t.dueDate ? ('DDL ' + esc(t.dueDate)) : '长期有效'}</span></div>`;
+    if (t.completedAt) {
+      lines += `<div class="detail-line"><span class="detail-k">完成记录</span><span class="detail-v">${esc(S.formatFullTime(t.completedAt))}（时隔 ${esc(S.formatDuration(t.createdAt, t.completedAt))}）</span></div>`;
+    }
+    $('detailFullTime').innerHTML = lines;
     $('taskModal').classList.add('open');
   }
 
@@ -1940,7 +2004,20 @@ window.TimeTraceSync = (function () {
     // 弹窗保存与删除
     $('closeModalBtn').addEventListener('click', closeTaskModal);
     $('taskModal').addEventListener('click', (e) => { if (e.target === $('taskModal')) closeTaskModal(); });
-    $('clearEditDueBtn').addEventListener('click', () => { $('editDueDate').value = ''; });
+    $('editDueDate').addEventListener('change', syncModalPickerState);
+    $('editCompletedAt').addEventListener('change', syncModalPickerState);
+    $('dueFieldWrap').addEventListener('click', () => {
+      if (typeof $('editDueDate').showPicker === 'function') {
+        try { $('editDueDate').showPicker(); } catch (e) {}
+      }
+    });
+    $('doneFieldWrap').addEventListener('click', () => {
+      if (typeof $('editCompletedAt').showPicker === 'function') {
+        try { $('editCompletedAt').showPicker(); } catch (e) {}
+      }
+    });
+    $('clearEditDueBtn').addEventListener('click', () => { $('editDueDate').value = ''; syncModalPickerState(); });
+    $('clearEditDoneBtn').addEventListener('click', () => { $('editCompletedAt').value = ''; syncModalPickerState(); });
     $('saveTaskBtn').addEventListener('click', () => {
       const t = store.tasks.find((x) => x.id === editingTaskId);
       if (!t) return;
