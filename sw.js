@@ -1,4 +1,4 @@
-const CACHE_NAME = 'timetrace-todo-v7';
+const CACHE_NAME = 'timetrace-todo-v8';
 const ASSETS = [
   './',
   './index.html',

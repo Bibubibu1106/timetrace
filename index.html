@@ -280,14 +280,52 @@ body::before {
 }
 .search-box input::placeholder { color: var(--text-muted); }
 
-/* 待办事项列表 */
+/* 待办事项列表与双向滑动手势容器 */
 .task-list { display: flex; flex-direction: column; gap: 10px; }
-.task-item {
-  padding: 13px 15px; display: flex; align-items: flex-start; gap: 12px;
-  transition: transform 0.15s ease, opacity 0.2s ease; cursor: pointer;
+.task-swipe-wrap {
+  position: relative;
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  user-select: none; -webkit-user-select: none;
+  touch-action: pan-y;
 }
+.swipe-bg {
+  position: absolute; inset: 0;
+  border-radius: var(--radius-xl);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 18px; pointer-events: none; opacity: 0;
+  transition: opacity 0.12s ease, background 0.15s ease;
+  font-size: 13px; font-weight: 700; color: #ffffff;
+}
+.swipe-bg.show-right {
+  opacity: 1;
+  background: linear-gradient(90deg, rgba(16, 185, 129, 0.85), rgba(5, 150, 105, 0.55));
+}
+.swipe-bg.show-right.armed {
+  background: linear-gradient(90deg, #059669, #10b981);
+}
+.swipe-bg.show-left {
+  opacity: 1;
+  background: linear-gradient(270deg, rgba(225, 29, 72, 0.86), rgba(190, 18, 60, 0.55));
+}
+.swipe-bg.show-left.armed {
+  background: linear-gradient(270deg, #dc2626, #e11d48);
+}
+.swipe-hint {
+  display: inline-flex; align-items: center; gap: 6px;
+  transition: transform 0.15s ease;
+}
+.swipe-bg.armed .swipe-hint { transform: scale(1.08); }
+
+.task-item {
+  position: relative; z-index: 1;
+  padding: 13px 15px; display: flex; align-items: flex-start; gap: 12px;
+  transition: transform 0.2s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.2s ease;
+  cursor: pointer; will-change: transform;
+}
+.task-item.dragging { transition: none !important; }
 .task-item:hover { transform: translateY(-1px); }
-.task-item.done { opacity: 0.84; }
+.task-item.done { opacity: 0.88; }
 
 .check-btn {
   width: 23px; height: 23px; border-radius: 50%; margin-top: 1px; flex-shrink: 0;
@@ -1512,24 +1550,36 @@ window.TimeTraceSync = (function () {
       const dur = done ? S.formatDuration(t.createdAt, t.completedAt) : '';
       const waitDays = (!done && t.createdAt) ? Math.floor((nowMs - t.createdAt) / 86400000) : 0;
       const ddlBadge = formatDdlBadge(t, todayKey);
-      return `<div class="glass-card task-item ${done ? 'done' : ''}" data-task-id="${esc(t.id)}">
-        <button type="button" class="check-btn" data-toggle-id="${esc(t.id)}" aria-label="切换完成状态">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="20 6 9 17 4 12"></polyline>
-          </svg>
-        </button>
-        <div class="task-body">
-          <div class="task-top">
-            <div class="task-title">${esc(t.title)}</div>
-          </div>
-          ${t.note ? `<div class="task-note">${esc(t.note)}</div>` : ''}
-          <div class="time-meta-row">
-            <span class="meta-badge badge-cat"><span class="cat-dot" style="background:${esc(cat.color)}"></span>${esc(cat.name)}</span>
-            ${ddlBadge}
-            <span class="meta-badge badge-created">创建 ${esc(S.formatShortTime(t.createdAt))}</span>
-            ${(!done && !t.dueDate && waitDays >= 1) ? `<span class="meta-badge badge-cat">已记下 ${waitDays}天</span>` : ''}
-            ${done ? `<span class="meta-badge badge-completed">完成 ${esc(S.formatShortTime(t.completedAt))}</span>` : ''}
-            ${dur ? `<span class="meta-badge badge-duration">时隔 ${esc(dur)}</span>` : ''}
+      return `<div class="task-swipe-wrap" data-swipe-id="${esc(t.id)}">
+        <div class="swipe-bg">
+          <span class="swipe-hint swipe-hint-left">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            <em class="swipe-left-txt" style="font-style:normal">${done ? '恢复待办' : '完成'}</em>
+          </span>
+          <span class="swipe-hint swipe-hint-right">
+            <em class="swipe-right-txt" style="font-style:normal">删除</em>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path></svg>
+          </span>
+        </div>
+        <div class="glass-card task-item ${done ? 'done' : ''}" data-task-id="${esc(t.id)}">
+          <button type="button" class="check-btn" data-toggle-id="${esc(t.id)}" aria-label="切换完成状态">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+          </button>
+          <div class="task-body">
+            <div class="task-top">
+              <div class="task-title">${esc(t.title)}</div>
+            </div>
+            ${t.note ? `<div class="task-note">${esc(t.note)}</div>` : ''}
+            <div class="time-meta-row">
+              <span class="meta-badge badge-cat"><span class="cat-dot" style="background:${esc(cat.color)}"></span>${esc(cat.name)}</span>
+              ${ddlBadge}
+              <span class="meta-badge badge-created">创建 ${esc(S.formatShortTime(t.createdAt))}</span>
+              ${(!done && !t.dueDate && waitDays >= 1) ? `<span class="meta-badge badge-cat">已记下 ${waitDays}天</span>` : ''}
+              ${done ? `<span class="meta-badge badge-completed">完成 ${esc(S.formatShortTime(t.completedAt))}</span>` : ''}
+              ${dur ? `<span class="meta-badge badge-duration">时隔 ${esc(dur)}</span>` : ''}
+            </div>
           </div>
         </div>
       </div>`;
@@ -1920,6 +1970,141 @@ window.TimeTraceSync = (function () {
       scheduleAutoSync();
     });
 
+    let swipeBlockedClickUntil = 0;
+
+    function toggleTaskCompleteById(id) {
+      const t = store.tasks.find((x) => x.id === id);
+      if (!t) return;
+      const now = Date.now();
+      t.completedAt = t.completedAt ? null : now;
+      t.updatedAt = now;
+      S.saveStore(store);
+      renderAll();
+      showToast(t.completedAt ? ('已完成 · 时隔 ' + S.formatDuration(t.createdAt, t.completedAt)) : '已恢复为待办');
+      scheduleAutoSync();
+    }
+
+    function quickDeleteTaskById(id) {
+      const t = store.tasks.find((x) => x.id === id);
+      if (!t) return;
+      t.deletedAt = Date.now();
+      t.updatedAt = Date.now();
+      S.saveStore(store);
+      renderAll();
+      showToast('已快捷删除「' + (t.title || '').slice(0, 10) + '」');
+      scheduleAutoSync();
+    }
+
+    // 事项卡片双向渐进滑动手势：左拉一点提示删除、继续左拉快捷删除；右拉一点提示完成、继续右拉快捷完成
+    (function setupTaskSwipeGesture() {
+      const TRIGGER_PX = 104;
+      const MAX_PULL_PX = 165;
+      let wrap = null, card = null, bg = null, leftTxt = null, rightTxt = null, taskId = '';
+      let isDoneTask = false;
+      let startX = 0, startY = 0, curDx = 0, lockedAxis = '';
+
+      function onStart(clientX, clientY, target) {
+        if (target.closest('.check-btn')) return;
+        const w = target.closest('.task-swipe-wrap');
+        if (!w) return;
+        wrap = w;
+        taskId = w.dataset.swipeId || '';
+        card = w.querySelector('.task-item');
+        bg = w.querySelector('.swipe-bg');
+        leftTxt = w.querySelector('.swipe-left-txt');
+        rightTxt = w.querySelector('.swipe-right-txt');
+        const tObj = store.tasks.find((x) => x.id === taskId);
+        isDoneTask = !!(tObj && tObj.completedAt);
+        startX = clientX;
+        startY = clientY;
+        curDx = 0;
+        lockedAxis = '';
+      }
+
+      function onMove(clientX, clientY, ev) {
+        if (!wrap || !card) return;
+        const dx = clientX - startX;
+        const dy = clientY - startY;
+        if (!lockedAxis) {
+          if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
+          lockedAxis = Math.abs(dx) > Math.abs(dy) * 1.15 ? 'x' : 'y';
+          if (lockedAxis === 'x') card.classList.add('dragging');
+        }
+        if (lockedAxis !== 'x') return;
+        if (ev && ev.cancelable) ev.preventDefault();
+
+        const sign = dx >= 0 ? 1 : -1;
+        const abs = Math.abs(dx);
+        const damped = abs <= TRIGGER_PX ? abs : (TRIGGER_PX + (abs - TRIGGER_PX) * 0.42);
+        curDx = sign * Math.min(MAX_PULL_PX, damped);
+        card.style.transform = `translateX(${curDx.toFixed(1)}px)`;
+
+        const armed = Math.abs(dx) >= TRIGGER_PX;
+        if (dx > 6) {
+          bg.className = 'swipe-bg show-right' + (armed ? ' armed' : '');
+          if (leftTxt) leftTxt.textContent = armed ? (isDoneTask ? '松手恢复待办' : '松手完成') : (isDoneTask ? '继续右拉恢复' : '继续右拉完成');
+        } else if (dx < -6) {
+          bg.className = 'swipe-bg show-left' + (armed ? ' armed' : '');
+          if (rightTxt) rightTxt.textContent = armed ? '松手删除' : '继续左拉删除';
+        } else {
+          bg.className = 'swipe-bg';
+        }
+      }
+
+      function onEnd(clientX) {
+        if (!wrap || !card) return;
+        const totalDx = (typeof clientX === 'number') ? (clientX - startX) : curDx;
+        const wasHorizontal = lockedAxis === 'x';
+        const targetCard = card;
+        const targetBg = bg;
+        const targetId = taskId;
+        wrap = null; card = null; bg = null; leftTxt = null; rightTxt = null; taskId = ''; lockedAxis = '';
+
+        targetCard.classList.remove('dragging');
+        if (!wasHorizontal) return;
+        swipeBlockedClickUntil = Date.now() + 320;
+
+        if (totalDx >= TRIGGER_PX) {
+          targetCard.style.transform = 'translateX(120%)';
+          setTimeout(() => toggleTaskCompleteById(targetId), 140);
+        } else if (totalDx <= -TRIGGER_PX) {
+          targetCard.style.transform = 'translateX(-120%)';
+          targetCard.style.opacity = '0';
+          setTimeout(() => quickDeleteTaskById(targetId), 150);
+        } else {
+          targetCard.style.transform = '';
+          setTimeout(() => { if (targetBg) targetBg.className = 'swipe-bg'; }, 180);
+        }
+      }
+
+      const listEl = $('taskList');
+      listEl.addEventListener('touchstart', (e) => {
+        if (e.touches.length === 1) onStart(e.touches[0].clientX, e.touches[0].clientY, e.target);
+      }, { passive: true });
+      listEl.addEventListener('touchmove', (e) => {
+        if (e.touches.length === 1) onMove(e.touches[0].clientX, e.touches[0].clientY, e);
+      }, { passive: false });
+      listEl.addEventListener('touchend', (e) => {
+        onEnd(e.changedTouches && e.changedTouches[0] ? e.changedTouches[0].clientX : undefined);
+      });
+      listEl.addEventListener('touchcancel', () => onEnd(0));
+
+      let mouseDown = false;
+      listEl.addEventListener('mousedown', (e) => {
+        if (e.button !== 0) return;
+        mouseDown = true;
+        onStart(e.clientX, e.clientY, e.target);
+      });
+      window.addEventListener('mousemove', (e) => {
+        if (mouseDown) onMove(e.clientX, e.clientY, e);
+      });
+      window.addEventListener('mouseup', (e) => {
+        if (!mouseDown) return;
+        mouseDown = false;
+        onEnd(e.clientX);
+      });
+    })();
+
     // 全局事件委托
     document.body.addEventListener('click', async (e) => {
       const pickBtn = e.target.closest('[data-pick-cat]');
@@ -1944,22 +2129,16 @@ window.TimeTraceSync = (function () {
       const toggleBtn = e.target.closest('[data-toggle-id]');
       if (toggleBtn) {
         e.stopPropagation();
-        const id = toggleBtn.dataset.toggleId;
-        const t = store.tasks.find((x) => x.id === id);
-        if (t) {
-          const now = Date.now();
-          t.completedAt = t.completedAt ? null : now;
-          t.updatedAt = now;
-          S.saveStore(store);
-          renderAll();
-          showToast(t.completedAt ? ('已完成 · 时隔 ' + S.formatDuration(t.createdAt, t.completedAt)) : '已恢复为待办');
-          scheduleAutoSync();
-        }
+        toggleTaskCompleteById(toggleBtn.dataset.toggleId);
         return;
       }
 
       const card = e.target.closest('[data-task-id]');
-      if (card) { openTaskModal(card.dataset.taskId); return; }
+      if (card) {
+        if (Date.now() < swipeBlockedClickUntil) return;
+        openTaskModal(card.dataset.taskId);
+        return;
+      }
 
       const calBtn = e.target.closest('[data-cal-date]');
       if (calBtn) {
