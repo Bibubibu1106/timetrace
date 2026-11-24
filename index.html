@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <meta name="theme-color" content="#2b1e54" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="apple-mobile-web-app-title" content="时光待办" />
   <title>时光待办 · TimeTrace</title>
   <link rel="manifest" href="./manifest.json" />
@@ -189,7 +189,8 @@ body::before {
   display: flex; align-items: center; justify-content: space-between;
   gap: 8px; flex-wrap: wrap; border-top: 1px solid var(--divider); padding-top: 9px;
 }
-.cat-pick-list { display: flex; align-items: center; gap: 6px; overflow-x: auto; scrollbar-width: none; }
+.cat-pick-list { display: flex; align-items: center; gap: 6px; overflow-x: auto; scrollbar-width: none; padding: 1px 2px; max-width: 100%; }
+.cat-pick-list .chip { padding: 0 10px; }
 .cat-pick-list::-webkit-scrollbar { display: none; }
 
 .ddl-picker-wrap { display: inline-flex; align-items: center; gap: 4px; flex-shrink: 0; }
